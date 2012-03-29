@@ -1,6 +1,7 @@
 package org.liblouis;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -29,7 +30,11 @@ import com.sun.jna.ptr.IntByReference;
 
 public class Louis {
 
-	private final int outlenMultiplier;
+	private static final int OUT_IN_RATIO = 2;
+	private static final char TXT_HYPHEN = '\u00AD';
+	private static final char BRL_HYPHEN = 't';
+	
+	private final int charSize;
 	private final String encoding;
 	private final LouisLibrary INSTANCE;
 
@@ -62,8 +67,8 @@ public class Louis {
 	private Louis() {
 		INSTANCE = (LouisLibrary) Native.loadLibrary(("louis"),
 				LouisLibrary.class);
-		outlenMultiplier = INSTANCE.lou_charSize();
-		switch (outlenMultiplier) {
+		charSize = INSTANCE.lou_charSize();
+		switch (charSize) {
 		case 2:
 			encoding = "UTF-16LE";
 			break;
@@ -72,32 +77,48 @@ public class Louis {
 			break;
 		default:
 			throw new RuntimeException(
-					"unsuported char size configured in liblouis: "
-							+ outlenMultiplier);
+					"unsuported char size configured in liblouis: " + charSize);
 		}
 	}
 
-	private String translateString(final String trantab, final String inbuf) {
+	private String translateString(final String trantab, String inbuf) {
 		try {
-			final int inlen = inbuf.length();
-			if (inlen == 0) {
+			if (inbuf.length() == 0) {
 				return "";
 			}
+			HyphenatedString hyphenatedInbuf = null;
+			boolean preHyphenated = inbuf.contains(String.valueOf(TXT_HYPHEN));
+			if (preHyphenated) {
+				hyphenatedInbuf = new HyphenatedString(inbuf, TXT_HYPHEN);
+				inbuf = hyphenatedInbuf.getUnhyphenatedString();
+			}
+			final int inlen = inbuf.length();
+			final int maxOutlen = OUT_IN_RATIO * inlen;
 			final byte[] inbufArray = inbuf.getBytes(encoding);
-			final byte[] outbufArray = new byte[outlenMultiplier
-					* inbufArray.length];
-			final IntByReference poutlen = new IntByReference(inlen
-					* outlenMultiplier);
-			if (INSTANCE.lou_translateString(trantab, inbufArray,
-					new IntByReference(inlen), outbufArray, poutlen, null,
-					null, 0) == 0) {
+			final byte[] outbufArray = new byte[charSize * maxOutlen];
+			final IntByReference pInlen = new IntByReference(inlen);
+			final IntByReference pOutlen = new IntByReference(maxOutlen);
+			int[] outputPosArray = null;
+			if (preHyphenated) {
+				outputPosArray = new int[maxOutlen];
+			}
+			if (INSTANCE.lou_translate(trantab, inbufArray,
+					pInlen, outbufArray, pOutlen, null,
+					null, null, outputPosArray, null, 0) == 0) {
 				throw new RuntimeException("Unable to complete translation");
 			}
-			return new String(outbufArray, 0, poutlen.getValue()
-					* (inbufArray.length / inlen), encoding);
+			int outlen = pOutlen.getValue();
+			String outbuf = new String(outbufArray, 0, outlen * charSize, encoding);
+			if (preHyphenated) {
+				outputPosArray = Arrays.copyOf(outputPosArray, outlen);
+				boolean[] inHyphenPos = hyphenatedInbuf.getHyphenPoints();
+				boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
+				HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
+				outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_HYPHEN);
+			}
+			return outbuf;			
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Encoding not supported by JVM:"
-					+ encoding);
+			throw new RuntimeException("Encoding not supported by JVM:" + encoding);
 		}
 	}
 
@@ -108,6 +129,29 @@ public class Louis {
 	public static String squeeze(final String in) {
 		return in.replaceAll("(?:\\p{Z}|\\s)+", " ");
 	}
+	
+	private static boolean[] convertHyphenPos(boolean[] inHyphenPos, int[] inPosToOutPosMap) {
+		boolean[] outHyphenPos = new boolean[inPosToOutPosMap.length - 1];
+		try {
+			int inPos = 0;
+			for (int outPos=0; outPos<outHyphenPos.length; outPos++) {
+				int newInPos = inPosToOutPosMap[outPos+1];
+				if (newInPos < inPos) {
+					throw new RuntimeException("inPosToOutPosMap must be a non-negative, " +
+							"non-decreasing function");
+				} else if(newInPos > inPos) {
+					inPos = newInPos;
+					outHyphenPos[outPos] = inHyphenPos[inPos-1];
+				} else {
+					outHyphenPos[outPos] = false;
+				}
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new RuntimeException("values of inPosToOutPosMap can not exceed " +
+					"the length of inHyphenPos + 1");
+		}
+		return outHyphenPos;
+	}
 
 	interface LouisLibrary extends Library {
 
@@ -115,7 +159,14 @@ public class Louis {
 				final byte[] inbuf, final IntByReference inlen,
 				final byte[] outbuf, final IntByReference outlen,
 				final byte[] typeform, final byte[] spacing, final int mode);
-
+		
+		public int lou_translate(final String trantab,
+				final byte[] inbuf, final IntByReference inlen,
+				final byte[] outbuf, final IntByReference outlen,
+				final byte[] typeform, final byte[] spacing, 
+				final int[] outposPos, final int[] inposPos, final IntByReference cursorpos,
+				final int mode);
+		
 		public int lou_charSize();
 
 		public String lou_version();
