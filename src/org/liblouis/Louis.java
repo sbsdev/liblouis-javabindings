@@ -110,11 +110,15 @@ public class Louis {
 			int outlen = pOutlen.getValue();
 			String outbuf = new String(outbufArray, 0, outlen * charSize, encoding);
 			if (preHyphenated) {
-				outputPosArray = Arrays.copyOf(outputPosArray, outlen);
-				boolean[] inHyphenPos = hyphenatedInbuf.getHyphenPoints();
-				boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
-				HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
-				outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_HYPHEN);
+				try {
+					outputPosArray = Arrays.copyOf(outputPosArray, outlen);
+					boolean[] inHyphenPos = hyphenatedInbuf.getHyphenPoints();
+					boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
+					HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
+					outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_HYPHEN);
+				} catch (RuntimeException e) {
+					// Don't hyphenate the text when an exception occurs (because of liblouis bug in outputPos).
+				}
 			}
 			return outbuf;			
 		} catch (UnsupportedEncodingException e) {
@@ -137,6 +141,7 @@ public class Louis {
 			for (int outPos=0; outPos<outHyphenPos.length; outPos++) {
 				int newInPos = inPosToOutPosMap[outPos+1];
 				if (newInPos < inPos) {
+					// TODO fix liblouis bug in outputPos
 					throw new RuntimeException("inPosToOutPosMap must be a non-negative, " +
 							"non-decreasing function");
 				} else if(newInPos > inPos) {
