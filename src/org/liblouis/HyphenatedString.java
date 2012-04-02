@@ -86,7 +86,7 @@ public class HyphenatedString {
 	
 	/**
 	 * Returns the fully hyphenated string.
-	 * A hyphen is inserted at all possible hyphenation points.
+	 * The specified hyphen is inserted at all possible hyphenation points.
 	 * @param hyphen The character to be used as hyphenation mark.
 	 * @return The hyphenated string
 	 */

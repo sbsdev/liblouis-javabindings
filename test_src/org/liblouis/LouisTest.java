@@ -1,6 +1,7 @@
 package org.liblouis;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -123,24 +124,58 @@ public class LouisTest {
 	@Test
 	public void testHyphenationG2() {
 		
-		assertEquals("BAtDEtHOtSCtB/tD%", Louis.translate(de_g2, "Ba­de­ho­sen­bun­des"));
-		assertEquals("B14tFOtTOS", Louis.translate(de_g2, "Bauch­fo­tos"));
-		assertEquals("EHEtABtS#tTC", Louis.translate(de_g2, "Ehe­ab­sich­ten"));
-		assertEquals("FAtBtRIKtBR+tD%", Louis.translate(de_g2, "Fa­b­rik­bran­des"));
-		assertEquals("F7Nt;tZ0tHUStSK+tDAL", Louis.translate(de_g2, "Fern­be­zie­hungs­skan­dal"));
-		assertEquals("GOURtMETtMCUtK)t(", Louis.translate(de_g2, "Gour­met­me­nu­kar­te"));
-		assertEquals("HA5tH/tDEtH:StB+D", Louis.translate(de_g2, "Hasch­hun­de­hals­band"));
-		assertEquals("H*tD7tXtP)t'COURSt&tB8HR", Louis.translate(de_g2, "Hin­der­nis­par­cours­ge­bühr"));
-		assertEquals("*tDU]tR0tKLEtB7N", Louis.translate(de_g2, "In­dus­t­rie­kle­bern"));
-		assertEquals("KATtZCtT'YPtMEtDItZ*", Louis.translate(de_g2, "Kat­zen­typ­me­di­zin"));
-		assertEquals("KOtLUMtNCtB+DS", Louis.translate(de_g2, "Ko­lum­nen­bands"));
-		assertEquals("5NURRtL1t(", Louis.translate(de_g2, "Schnurr­lau­te"));
-		assertEquals("SONNtTAGtM?tGCtD@X7UC", Louis.translate(de_g2, "Sonn­tag­mor­gen­däm­me­run­gen"));
-		assertEquals("TYEtFONtR/DtSPRU4S", Louis.translate(de_g2, "Te­le­fon­rund­spruchs"));
-		assertEquals("TR2Et;t,3%", Louis.translate(de_g2, "Treue­be­wei­ses"));
-		assertEquals(",?t,Bt,ZtBGCtDC", Louis.translate(de_g2, "vor­bei­zu­brin­gen­den"));
-		assertEquals("W+tD7tWGt,37t]AHL", Louis.translate(de_g2, "Wan­der­weg­wei­ser­stahl"));
-		assertEquals(",8tW<UStFILMtKAtM7A", Louis.translate(de_g2, "Über­wa­chungs­film­ka­me­ra"));
+		assertNoFakeHyphens("BAtDEtHOtSCtB/tD%", Louis.translate(de_g2, "Ba­de­ho­sen­bun­des"));
+		assertNoFakeHyphens("B14tFOtTOS", Louis.translate(de_g2, "Bauch­fo­tos"));
+		assertNoFakeHyphens("EHEtABtS#tTC", Louis.translate(de_g2, "Ehe­ab­sich­ten"));
+		assertNoFakeHyphens("FAtBtRIKtBR+tD%", Louis.translate(de_g2, "Fa­b­rik­bran­des"));
+		assertNoFakeHyphens("F7Nt;tZ0tHUStSK+tDAL", Louis.translate(de_g2, "Fern­be­zie­hungs­skan­dal"));
+		assertNoFakeHyphens("GOURtMETtMCUtK)t(", Louis.translate(de_g2, "Gour­met­me­nu­kar­te"));
+		assertNoFakeHyphens("HA5tH/tDEtH:StB+D", Louis.translate(de_g2, "Hasch­hun­de­hals­band"));
+		assertNoFakeHyphens("H*tD7tXtP)t'COURSt&tB8HR", Louis.translate(de_g2, "Hin­der­nis­par­cours­ge­bühr"));
+		assertNoFakeHyphens("*tDU]tR0tKLEtB7N", Louis.translate(de_g2, "In­dus­t­rie­kle­bern"));
+		assertNoFakeHyphens("KATtZCtT'YPtMEtDItZ*", Louis.translate(de_g2, "Kat­zen­typ­me­di­zin"));
+		assertNoFakeHyphens("KOtLUMtNCtB+DS", Louis.translate(de_g2, "Ko­lum­nen­bands"));
+		assertNoFakeHyphens("5NURRtL1t(", Louis.translate(de_g2, "Schnurr­lau­te"));
+		assertNoFakeHyphens("SONNtTAGtM?tGCtD@X7UC", Louis.translate(de_g2, "Sonn­tag­mor­gen­däm­me­run­gen"));
+		assertNoFakeHyphens("TYEtFONtR/DtSPRU4S", Louis.translate(de_g2, "Te­le­fon­rund­spruchs"));
+		assertNoFakeHyphens("TR2Et;t,3%", Louis.translate(de_g2, "Treue­be­wei­ses"));
+		assertNoFakeHyphens(",?t,Bt,ZtBGCtDC", Louis.translate(de_g2, "vor­bei­zu­brin­gen­den"));
+		assertNoFakeHyphens("W+tD7tWGt,37t]AHL", Louis.translate(de_g2, "Wan­der­weg­wei­ser­stahl"));
+		assertNoFakeHyphens(",8tW<UStFILMtKAtM7A", Louis.translate(de_g2, "Über­wa­chungs­film­ka­me­ra"));
 		
+	}
+	
+	private static void assertNoFakeHyphens(String expected, String actual) {
+		final char hyphen = 't';
+		int count = 0;
+		int i = 0; 
+		int j = 0;
+		boolean missing, fake;
+		try {
+			while(i < actual.length() || j < expected.length()) {
+				missing = false;
+				fake = false;
+				if (expected.charAt(j) == hyphen) {
+			        if (actual.charAt(i) != hyphen) {
+			        	missing = true;
+			        }
+				} else if (actual.charAt(i) == hyphen) {
+					fake = true;
+				} else if (actual.charAt(i) != expected.charAt(j)) {
+					throw new RuntimeException("strings don't match");
+				}
+		        if (fake) {
+		        	count++;
+		        } else {
+		        	j++;
+		        }
+		        if (!missing) {
+		        	i++;
+		        }
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw new RuntimeException("strings don't match");
+		}		
+		assertTrue("Number of fake hyphens = " + count, count == 0);
 	}
 }
