@@ -2,6 +2,8 @@ package org.liblouis;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -31,8 +33,9 @@ import com.sun.jna.ptr.IntByReference;
 public class Louis {
 
 	private static final int OUT_IN_RATIO = 2;
-	private static final char TXT_HYPHEN = '\u00AD';
-	private static final char BRL_HYPHEN = 't';
+	private static final char TXT_SOFT_HYPHEN = '\u00AD';
+	private static final char BRL_SOFT_HYPHEN = 't';
+	private static final String BRL_HARD_HYPHEN = "-m";
 	
 	private final int charSize;
 	private final String encoding;
@@ -87,9 +90,9 @@ public class Louis {
 				return "";
 			}
 			HyphenatedString hyphenatedInbuf = null;
-			boolean preHyphenated = inbuf.contains(String.valueOf(TXT_HYPHEN));
+			boolean preHyphenated = inbuf.contains(String.valueOf(TXT_SOFT_HYPHEN));
 			if (preHyphenated) {
-				hyphenatedInbuf = new HyphenatedString(inbuf, TXT_HYPHEN);
+				hyphenatedInbuf = new HyphenatedString(inbuf, TXT_SOFT_HYPHEN);
 				inbuf = hyphenatedInbuf.getUnhyphenatedString();
 			}
 			final int inlen = inbuf.length();
@@ -113,9 +116,16 @@ public class Louis {
 				try {
 					outputPosArray = Arrays.copyOf(outputPosArray, outlen);
 					boolean[] inHyphenPos = hyphenatedInbuf.getHyphenPoints();
+					// Add hyphen points after hard hyphens (= "-" followed and preceded by a letter)
+					Matcher matcher = Pattern.compile("\\p{L}-\\p{L}").matcher(inbuf);
+					while (matcher.find()) {
+						inHyphenPos[matcher.start()+1] = true;
+					}
 					boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
 					HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
-					outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_HYPHEN);
+					outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_SOFT_HYPHEN);
+					// Replace 't' hyphen points after a hard hyphen by 'm'
+					outbuf = outbuf.replaceAll("-" + BRL_SOFT_HYPHEN, BRL_HARD_HYPHEN);
 				} catch (RuntimeException e) {
 					// Don't hyphenate the text when an exception occurs (because of liblouis bug in outputPos).
 				}

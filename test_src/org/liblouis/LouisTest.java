@@ -145,6 +145,11 @@ public class LouisTest {
 		
 	}
 	
+	@Test
+	public void testHardHyphens() {
+		assertEquals("KLINtKEN-mPUTtZER", Louis.translate(de_g1, "Klin­ken-put­zer­"));
+	}
+	
 	private static void assertNoFakeHyphens(String expected, String actual) {
 		final char hyphen = 't';
 		int count = 0;
