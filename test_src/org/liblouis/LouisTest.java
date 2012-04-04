@@ -123,6 +123,8 @@ public class LouisTest {
 	
 	@Test
 	public void testHyphenationG2() {
+
+		assertNoFakeHyphens("TItTY", Louis.translate(de_g2, "Ti­tel­"));
 		
 		assertNoFakeHyphens("BAtDEtHOtSCtB/tD%", Louis.translate(de_g2, "Ba­de­ho­sen­bun­des"));
 		assertNoFakeHyphens("B14tFOtTOS", Louis.translate(de_g2, "Bauch­fo­tos"));
@@ -148,6 +150,8 @@ public class LouisTest {
 	@Test
 	public void testHardHyphens() {
 		assertEquals("KLINtKEN-mPUTtZER", Louis.translate(de_g1, "Klin­ken-put­zer­"));
+		assertEquals("S/-mBLO$", Louis.translate(de_g2, "Sun-block"));
+		assertEquals("TAG%-m+Z3G7", Louis.translate(de_g2, "Tages-Anzeiger"));
 	}
 	
 	private static void assertNoFakeHyphens(String expected, String actual) {

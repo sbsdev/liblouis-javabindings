@@ -90,7 +90,8 @@ public class Louis {
 				return "";
 			}
 			HyphenatedString hyphenatedInbuf = null;
-			boolean preHyphenated = inbuf.contains(String.valueOf(TXT_SOFT_HYPHEN));
+			boolean preHyphenated = inbuf.contains(String.valueOf(TXT_SOFT_HYPHEN)) ||
+					                inbuf.contains(String.valueOf('-'));
 			if (preHyphenated) {
 				hyphenatedInbuf = new HyphenatedString(inbuf, TXT_SOFT_HYPHEN);
 				inbuf = hyphenatedInbuf.getUnhyphenatedString();
