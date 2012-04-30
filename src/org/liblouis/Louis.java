@@ -53,6 +53,7 @@ public class Louis {
 	 * @return
 	 */
 	public static String translate(final String trantab, final String inbuf) {
+		System.out.println(inbuf);
 		return getInstance().translateString(trantab, squeeze(inbuf));
 	}
 
@@ -117,11 +118,6 @@ public class Louis {
 				try {
 					outputPosArray = Arrays.copyOf(outputPosArray, outlen);
 					boolean[] inHyphenPos = hyphenatedInbuf.getHyphenPoints();
-					// Add hyphen points after hard hyphens (= "-" followed and preceded by a letter)
-					Matcher matcher = Pattern.compile("\\p{L}-\\p{L}").matcher(inbuf);
-					while (matcher.find()) {
-						inHyphenPos[matcher.start()+1] = true;
-					}
 					boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
 					HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
 					outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_SOFT_HYPHEN);
