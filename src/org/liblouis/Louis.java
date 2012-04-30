@@ -53,7 +53,6 @@ public class Louis {
 	 * @return
 	 */
 	public static String translate(final String trantab, final String inbuf) {
-		System.out.println(inbuf);
 		return getInstance().translateString(trantab, squeeze(inbuf));
 	}
 
