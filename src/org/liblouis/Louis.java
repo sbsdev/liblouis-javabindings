@@ -30,7 +30,7 @@ import com.sun.jna.ptr.IntByReference;
 
 public class Louis {
 
-	private static final int OUT_IN_RATIO = 2;
+	private static final int OUT_IN_RATIO = 3;
 	private static final char TXT_SOFT_HYPHEN = '\u00AD';
 	private static final char BRL_SOFT_HYPHEN = 't';
 	private static final String BRL_HARD_HYPHEN = "-m";
