@@ -2,8 +2,6 @@ package org.liblouis;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -120,12 +118,14 @@ public class Louis {
 					boolean[] outHyphenPos = convertHyphenPos(inHyphenPos, outputPosArray);
 					HyphenatedString hyphenatedOutbuf = new HyphenatedString(outbuf, outHyphenPos);
 					outbuf = hyphenatedOutbuf.getFullyHyphenatedString(BRL_SOFT_HYPHEN);
-					// Replace 't' hyphen points after a hard hyphen by 'm'
+					// Replace 't' hyphen points after a hard hyphen (not a non-breaking hyphen) by 'm'
 					outbuf = outbuf.replaceAll("-" + BRL_SOFT_HYPHEN, BRL_HARD_HYPHEN);
 				} catch (RuntimeException e) {
-					// Don't hyphenate the text when an exception occurs (because of liblouis bug in outputPos).
+					// Don't hyphenate the text when an exception occurs.
 				}
 			}
+			// Replace non-breaking hyphens with a normal hyphen
+			outbuf = outbuf.replaceAll("\u2011", "-");
 			return outbuf;			
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException("Encoding not supported by JVM:" + encoding);
@@ -147,7 +147,6 @@ public class Louis {
 			for (int outPos=0; outPos<outHyphenPos.length; outPos++) {
 				int newInPos = inPosToOutPosMap[outPos+1];
 				if (newInPos < inPos) {
-					// TODO fix liblouis bug in outputPos
 					throw new RuntimeException("inPosToOutPosMap must be a non-negative, " +
 							"non-decreasing function");
 				} else if(newInPos > inPos) {
