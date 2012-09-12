@@ -149,9 +149,16 @@ public class LouisTest {
 	
 	@Test
 	public void testHardHyphens() {
-		assertEquals("KLINtKEN-mPUTtZER", Louis.translate(de_g1, "Klin­ken-put­zer­"));
-		assertEquals("S/-mBLO$", Louis.translate(de_g2, "Sun-block"));
-		assertEquals("TAG%-m+Z3G7", Louis.translate(de_g2, "Tages-Anzeiger"));
+		assertEquals("KLINtKEN-mPUTtZER", Louis.translate(de_g1, "Klin­ken-­put­zer"));
+		assertEquals("S/-mBLO$", Louis.translate(de_g2, "Sun-­block"));
+		assertEquals("TAG%-m+Z3G7", Louis.translate(de_g2, "Tages-­Anzeiger"));
+	}
+	
+	@Test
+	public void testHyphensBetweenLettersAndNumbers() {
+		assertEquals("#C-m!JR>", Louis.translate(de_g2, "3-­jä­hrig"));
+		assertEquals("#C-mF-m#B-mAKtTJ", Louis.translate(de_g2, "3-­für-­2-­Ak­tion"));
+		assertEquals("V #AD-m#AF UHR", Louis.translate(de_g2, "von 14-­16 Uhr"));
 	}
 	
 	private static void assertNoFakeHyphens(String expected, String actual) {
